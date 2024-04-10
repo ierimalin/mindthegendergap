@@ -1,0 +1,473 @@
+---
+title: "Mind the (Gender) Gap: Analysing Statistical Relationships between Gender and Political Ideology"
+author: Sneha, Alin & Anna
+date: "12. April 2024"
+output:
+  bookdown::pdf_document2: default
+urlcolor: blue
+bibliography: references.bib
+csl: american-political-science-association.csl
+---
+\newpage
+
+**Acknowledgements**
+
+We would like to thank Ruth Dassonneville for... 
+
+
+**Abstract**
+
+(100 - 250 words)
+
+\newpage
+
+# Introduction
+(300 - 500 words)
+
+
+**Motivation and Relevance**
+
+- Recently, there has been much media attention on a supposed relationship between gender & ideology
+
+- However, past research/journalistic investigations yields partially contradictory results
+
+- Thus, we aim to replicate one original article discussing a relationship between gender and ideology [@dassonneville_change_2021]
+
+-	Besides the attempted replication, our contribution is that we add an analysis of the influence of regime-type on the relationship between gender and ideology
+
+
+
+# Literature Review
+literature discussion with theoretical expectations (hypotheses) (500 - 800 words)
+
+Original article that we aim to replicate: [@dassonneville_change_2021]
+
+Discuss & Justify why we are using the 'gender' variable, what it represents (not biological sex matters, but the social roles/context/...)
+
+**Our potential theory/hypothesis:**
+Cultural/Structural explanation: increased salience of women’s issues in women’s consciousness post-feminist mobilization which are traditionally represented by left-leaning positions/parties.
+
+**Potential confounder?:**
+age/generational component to the gender gap: older women tend to be more conservative/right aligned than both older men and younger women. (but this is possibly confined to pre 1990 data – cohort replacement means that even older women are more left-aligned than they used to be)
+
+
+```{r needed package, eval=FALSE}
+#Be sure to have these installed...
+install.packages("tinytex")
+tinytex::tlmgr_install("multirow")
+install.packages("tidyverse")
+
+```
+
+
+```{r load_data}
+## load the data set
+library(haven)
+lrgen_whole <- read_dta("left-right-gender.dta")
+```
+
+```{r clean_data}
+## clean up the data
+
+## subset data to years from 2004 on & remove observations in which ideology or gender are NA
+lrgen <- subset(lrgen_whole, subset = (year > 2003) & (!is.na(ideology_st)) & (!is.na(gender)) & (country != "Northern Ireland") & (country != "Great Britain"))
+
+## rename gender variable
+names(lrgen)[names(lrgen)=="gender"] <- "female"
+
+#alternative method:
+#library(dply)
+#lrgen <- rename(lrgen, female = gender)
+
+## Adjust country variable
+# Merge countries with different spelling
+lrgen$country <- ifelse(lrgen$country == "Netherlands", "The Netherlands", lrgen$country)
+lrgen$country <- ifelse(lrgen$country == "İsrael", "Israel", lrgen$country)
+lrgen$country <- ifelse(lrgen$country == "Germany West" | lrgen$country == "Germany East" | lrgen$country == "Germany (West+East)", "Germany", lrgen$country)
+
+# change into factor variable
+lrgen$country <- as.factor(lrgen$country)
+```
+
+
+```{r regime_variable}
+## create variable for regime type (3 = liberal democracy, 2 = electoral democracy, 1 = electoral autocracy)
+
+lrgen$regime[lrgen$country %in% c("Australia", "Belgium", "Canada", "Denmark", "Estonia", "Finland", "France", "Germany", "United Kingdom", "Iceland", "Ireland", "Italy", "Luxembourg", "The Netherlands", "Norway", "Portugal", "Slovakia", "Slovenia", "Spain", "Sweden", "Switzerland", "Israel", "Chile", "Mexico", "New Zealand", "Japan", "United States", "South Korea")] <- 3
+
+# Hungary
+lrgen$regime[lrgen$country == "Hungary" & lrgen$year <= 2009] <- 3
+lrgen$regime[lrgen$country == "Hungary" & (lrgen$year > 2009 & lrgen$year <= 2017)] <- 2
+lrgen$regime[lrgen$country == "Hungary" & (lrgen$year > 2017)] <- 1
+
+# Latvia
+lrgen$regime[lrgen$country == "Latvia" & (lrgen$year <= 2009 | lrgen$country == 2013 | lrgen$year == 2016)] <- 2
+lrgen$regime[lrgen$country == "Latvia" & (lrgen$year %in% c(2010, 2011, 2012, 2014, 2015, 2017, 2018))] <- 3
+
+# Lithuania
+lrgen$regime[lrgen$country == "Lithuania" & lrgen$year <= 2015] <- 3
+lrgen$regime[lrgen$country == "Lithuania" & (lrgen$year > 2015)] <- 2
+
+# Poland
+lrgen$regime[lrgen$country == "Poland" & lrgen$year <= 2015] <- 3
+lrgen$regime[lrgen$country == "Poland" & (lrgen$year > 2015)] <- 2
+
+# Turkey
+lrgen$regime[lrgen$country == "Turkey" & lrgen$year <= 2012] <- 2
+lrgen$regime[lrgen$country == "Turkey" & (lrgen$year > 2012)] <- 1
+
+```
+
+
+# Research Design & Data
+description of the empirical approach to test the proposed hypotheses, data description, incl. descriptive statistics and plots (700 - 1000 words)
+
+## Data
+To test the effect of gender on ideology, this paper uses the replication **data** for @dassonneville_change_2021's article [@dassonneville_replication_2020]. This dataset was constructed by combining the data from the Eurobarometer surveys, the Latinobarometro, the European Social Survey, the World Values Study, the Comparative Study of Electoral Systems and national election studies. Our sample consists of 36 OECD countries rated at least partially free by Freedom House and our temporal scope extends from 2004 (first data on Latvia) to 2018. The data is organised in a country-year format, which allows us to conduct a cross-sectional, longitudinal, and comparative analysis analysing the impact of gender on ideology over time and across countries.
+
+
+## Variables
+
+**Outcome Variable**
+
+As the outcome variable, this research uses the `ideology_st` variable included in the data set. All surveys included in this data set includes a question on respondents' ideological self-placement on a left-right scale. However, the surveys partially measure ideology in different ways, with differing numbers of answer categories and differences in the provision of a middle option. Thus, @dassonneville_change_2021 harmonised all scales to a 1-10 scale with 1 representing the most left and 10 representing the most right [@dassonneville_change_2021]. As ideology is the variable of interests, we remove all observations with missing ideology values from the data set.
+
+**Predictor Variables**
+
+`Female` is the main predictor variable, representing XXX. It is measured on a binary scale, with 0 representing male, and 1 representing female. As gender is the main predictor variable of interests, we remove all observations with missing gender values from the data set.
+
+We use the variable `Year` to examine whether there is a time-trend in the effect of gender on ideology. As we are interested in the years 2004 until 2018, we remove all prior data from the data set.
+
+As the effect of gender on ideology may change with age, the variable `Age` represents respondents' age at the time of the survey and ranges from 16 to 100. It is measured by subtracting respondents' year of birth from the year in which the survey was taken. Depending on the exact date of a birthday or the survey implementation in a given year, the measured age may be one year above or below respondents' actual age. However, as this is only a marginal deviation, we do not assume this to introduce a substantive bias.
+
+`Country` refers to the country in which the survey way implemented. The data set includes observations from `r length(unique(lrgen$country))` countries. As we are interested in analysing OECD countries, we include data on the United Kingdom but exclude data on Great Britain and Northern Ireland from our analysis. Moreover, while some surveys on Germany measured attitudes in East and West Germany separately, we do not have sufficient temporal coverage to maintain this distinction in our analysis and, hence, analyse Germany as a unitary case. On average, there are `r dim(lrgen)[1] / length(unique(lrgen$country))` observations per country and `r `dim(lrgen)[1] / length(unique(lrgen$country)) / length(unique(lrgen$year))` observations per country-year. Table X lists the countries included in the data set, as well as the years for which data is available for each country.
+
+```{r country_descriptives}
+## descriptives for the 'country' variable
+
+countries <- unique(lrgen$country)
+countries_years <- rep(NA, length(unique(lrgen$country)))
+
+for (i in 1:length(unique(lrgen$country))) {
+  country <- subset(lrgen, country == unique(lrgen$country)[i])
+  years <- unique(country$year)
+  asc_years = sort(years)
+  years_string = paste(asc_years, collapse = " ")
+  countries_years[i] <- years_string
+}
+
+countries_overview <- cbind(countries_years)
+rownames(countries_overview) <- countries
+colnames(countries_overview) <- "Years"
+
+# WORKING NOTE: Why does it NOT work to add a title to this knitr::kable table? Would be the following: 
+
+knitr::kable(countries_overview)
+
+
+
+```
+
+
+The cultural and political setting matters for our hypothesised relationship between gender and ideology. As this setting may differ across regime types, we introduce a new `regime` variable. We code this variable using V-dem's Regimes-of-the-World index [@coppedge_v-dem_2023]. This index codes countries as liberal democracies (4), electoral democracies (3), electoral autocracies (2), or closed autocracies (1). The regime variable in our data is created by manually coding each country-year as one of these regime types. Our data only includes regime levels 2 to 4 (there are no closed autocracies).
+
+**Control Variables**
+
+As gender is randomly biologically assigned, there are very few potential confounding variables that may influence both gender and ideological self-identification. One of the few potential confounders is the country-specific cultural and ideological context. In certain countries, it may be common practice to abort based on fetuses sex. Parents not following this practice may both be more likely to give birth to e.g., female children and, at the same time, have e.g., more left attitudes which they transfer to their children. However, the authors are not aware of such practices in any of the countries included in the sample of 36 OECD countries. Hence, we do not include further control variables.
+
+
+--------------------------------------------------------------------------------
+Name                Description
+------------------- ------------------------------------------------------------
+`ideology_st`       Respondent's ideological self-placement standardised on a scale from from 1 (left) to 10 (right)
+
+`female`            Binary variable: 0 (male) or 1 (female)
+
+`year`              Year in which the survey was implemented, from 2004 to 2018
+
+`age`               Respondent's age at the time of the survey
+
+`country`           Name of the OECD country of the respondent
+
+`regime`            Regime type of the country of the respondent: 3 = liberal democracy, 2 = electoral democracy, 1 = electoral autocracy)
+--------------------------------------------------------------------------------
+
+
+
+```{r descriptive_statistics}
+## descriptive statistics
+
+## create vector with descriptives for each variable
+descriptives_female <- c(summary(lrgen$female)["Min."], summary(lrgen$female)["Max."], summary(lrgen$female)["Mean"], summary(lrgen$female)["Median"], sd(lrgen$female), summary(lrgen$female)["NA's"])
+
+descriptives_ideology <- c(summary(lrgen$ideology_st)["Min."], summary(lrgen$ideology_st)["Max."], summary(lrgen$ideology_st)["Mean"], summary(lrgen$ideology_st)["Median"], sd(lrgen$ideology_st), summary(lrgen$ideology_st)["NA's"])
+
+descriptives_year <- c(summary(lrgen$year)["Min."], summary(lrgen$year)["Max."], summary(lrgen$year)["Mean"], summary(lrgen$year)["Median"], sd(lrgen$year), summary(lrgen$year)["NA's"])
+
+descriptives_age <- c(summary(lrgen$age)["Min."], summary(lrgen$age)["Max."], summary(lrgen$age)["Mean"], summary(lrgen$age)["Median"], sd(lrgen$age), summary(lrgen$age)["NA's"])
+
+descriptives_regime <- c(summary(lrgen$regime)["Min."], summary(lrgen$regime)["Max."], summary(lrgen$regime)["Mean"], summary(lrgen$regime)["Median"], sd(lrgen$regime), summary(lrgen$regime)["NA's"])
+
+## WORKING NOTE: regime variable: once regime is coded, calculate these descriptives & include in 'create table' function + row names of table below
+## descriptives_regime <- c(summary(lrgen$regime)["Min."], summary(lrgen$regime)["Max."], summary(lrgen$regime)["Mean"], summary(lrgen$regime)["Median"], sd(lrgen$regime), summary(lrgen$regime)["NA's"])
+
+## create table
+descriptives <- round(rbind(descriptives_ideology, descriptives_female, descriptives_year, descriptives_age, descriptives_regime), digits = 2)
+rownames(descriptives) <- c("Ideology", "Female", "Year", "Age", "Regime")
+colnames(descriptives) <- c("Minimum", "Maximum", "Mean", "Median", "SD", "NA's")
+
+```
+
+
+```{r}
+knitr::kable(descriptives, caption = "Variables - Descriptive Statistics")
+```
+
+
+```{r graph_ideology_distribution}
+## further descriptives graphs we could include
+
+boxplot(lrgen$ideology_st, main = "Figure X. Distribution of Ideology", las = 1, col = "orangered", ylab = "Ideology from 1 (left) to 10 (right)")
+
+```
+
+```{r gender_subsets}
+## create subsets of data for further analysis
+
+## gender subsets (all years)
+female <- subset(lrgen, subset = (female == 1))
+male <- subset(lrgen, subset = (female == 0))
+
+## 2018 subset (both genders)
+lrgen_2018 <- subset(lrgen, subset = (year == 2018))
+
+## 2018 subsets by gender
+female_2018 <- subset(female, subset = (year == 2018))
+male_2018 <- subset(male, subset = (year == 2018))
+```
+
+
+```{r graph_2018_ideology_by_gender}
+## plot 2018 ideology by gender
+
+par(mfrow=c(1,2), oma=c(0,0,2,0))
+boxplot(female_2018$ideology_st, col = "darkred", las = 1, main = "Females", ylab = "Ideology from 1 (left) to 10 (right)")
+
+boxplot(male_2018$ideology_st, col = "steelblue2", las = 1, main = "Males", ylab = "Ideology from 1 (left) to 10 (right)")
+
+mtext("Figure X. Distribution of Ideology in 2018 by gender", side = 3, line = 0, outer = TRUE)
+
+```
+
+```{r graph_ideology_over_time_by_gender}
+## plot average ideology over time by gender
+
+# calculate average ideology over time by gender
+female_ideology_year <- tapply(female$ideology, female$year, mean)
+male_ideology_year <- tapply(male$ideology, male$year, mean)
+
+# plot
+plot(2004:2018, female_ideology_year,
+     main = "Figure X. Development of average female and male \n ideological self-placement over time",
+     xlab = "Year", ylab = "Ideology from 1 (left) to 10 (right)", ylim = c(5, 6), las = 1, type = "l", col = "darkred")
+
+points(2004:2018, male_ideology_year, type = "l", col = "steelblue2")
+
+text(2006, 5.5, "Male", col = "steelblue2")
+text(2006, 5.25, "Female", col = "darkred")
+
+```
+
+```{r plot_difference_in_ideology}
+# plot
+par(mar=c(5,5.5,5,5))
+plot(2004:2018, male_ideology_year - female_ideology_year,
+     main = "Figure X. Development of difference in average \n female and male ideological self-placement over time",
+     xlab = "", ylab = "Difference in average ideology \n between males and females ", ylim = c(-0.2, 0.2), las = 1, type = "l", col = "orangered")
+mtext("Note: Values over 0.0 mean that males are more right-wing.", line = -17.5)
+
+abline(h = 0, col = "lightgrey", lty = 5)
+```
+
+```{r, fig.width = 30, fig.height = 40, out.width = "100%"}
+## Plot development of average female and male ideological self-placement over time, by country
+## WORKING NOTE: make labels bigger (Readable). Any changes taken here should also be adjusted in next plot
+
+# unique_countries <- as.character(unique(lrgen$country))
+# countries
+
+par(mfrow = c(7, 3), mar=c(2,7,7,1), oma=c(2,2,2,2), cex.lab=4.5, cex.axis=4.5, cex.main=4.5, cex.sub=4.5)
+for (i in 1:length(unique(lrgen$country))){
+  
+  # subset for country
+  country <- subset(lrgen, subset = country == unique(lrgen$country)[i])
+  country_female <- subset(country, subset = (female == 1))
+  country_male <- subset(country, subset = (female == 0))
+  
+  # calculate average ideology over time by gender
+  female_ideology_year <- tapply(country_female$ideology, country_female$year, mean)
+  male_ideology_year <- tapply(country_male$ideology, country_male$year, mean)
+
+  # plot
+  
+  plot(as.numeric(names(female_ideology_year)), female_ideology_year,
+       main = paste(as.character(countries)[i]),
+       xlab = "", ylab = "Ideology from 1 (left) \n to 10 (right)", ylim = c(3, 7.5), las = 1, type = "l", col = "darkred")
+  
+  points(as.numeric(names(male_ideology_year)), male_ideology_year, type = "l", col = "steelblue2")
+  
+  legend("topright", legend = c("Female", "Male"), fill = c("darkred", "steelblue2"))
+}
+
+mtext("Figure X. Development of average female and male ideological self-placement over time, by country", side = 3, line = 0, cex = 4.5, outer = TRUE)
+```
+
+
+```{r, fig.width = 30, fig.height = 40, out.width = "100%"}
+## Plot development of average female and male ideological self-placement over time, by country
+## WORKING NOTE: make headers of each plot (country name) visible, make labels/headers visible, etc.
+
+par(mfrow = c(7, 3), mar=c(2,7,7,1), oma=c(2,2,2,2), cex.lab=4.5, cex.axis=4.5, cex.main=4.5, cex.sub=4.5)
+for (i in 1:length(unique(lrgen$country))){
+  
+  # subset for country
+  country <- subset(lrgen, subset = country == unique(lrgen$country)[i])
+  country_female <- subset(country, subset = (female == 1))
+  country_male <- subset(country, subset = (female == 0))
+  
+  # calculate average ideology over time by gender
+  female_ideology_year <- tapply(country_female$ideology, country_female$year, mean)
+  male_ideology_year <- tapply(country_male$ideology, country_male$year, mean)
+
+  # plot
+  plot(as.numeric(names(female_ideology_year)), male_ideology_year - female_ideology_year,
+     main = unique(lrgen$country)[i],
+     xlab = "Year", ylab = "Difference in average ideology \n between males and females", ylim = c(-0.8, 0.8), las = 1, type = "l", col = "orangered")
+
+  abline(h = 0, col = "lightgrey", lty = 5)
+}
+
+mtext("Figure X. Development of difference in average female and male ideological self-placement over time, by country", side = 3, line = 0, cex = 4.5, outer = TRUE)
+
+```
+
+## Data analysis method
+To evaluate the relationship between gender and ideology, and the extent to which this effect is moderated by variables like year, age, country, and regime, we employ regression analysis and create several linear models.
+
+First, we run a simple linear regression, analysing the relationship between gender and ideology.
+
+Second, we include interaction terms to examine heterogenous treatment effect of gender based on year, age, country, and regime type.
+
+
+
+
+# Data analysis and Discussion
+(1000 - 1500 words)
+
+```{r regression_models}
+## regression of ideology on gender across all years/countries
+# Finding: Small negative effect of gender on ideology (females slightly more left than males)
+fit1 <- lm(lrgen$ideology_st ~ lrgen$female)
+
+## regression of ideology on gender interacting with year
+# Finding: Over time, negative effect of gender on ideology increases (today, effect of females being more left than males is stronger than in the past)
+##(Possibly) there is a narrowing of the gender gap in ideology over time, instead of a widening. 
+fit2 <- lm(lrgen$ideology_st ~ lrgen$female * lrgen$year)
+
+## regression of ideology on gender interacting with age
+# Finding: Effect of gender on ideology decreases with age (larger gender-differences for younger people)
+fit3 <- lm(lrgen$ideology_st ~ lrgen$female * lrgen$age)
+
+## regression of ideology on gender interacting with age in 2018
+# Finding: In 2018, effect of gender on ideology was weaker than overall - may partially be because 2018 data only includes Hungary & Italy
+fit4 <- lm(lrgen_2018$ideology_st ~ lrgen_2018$female)
+
+## regression of ideology on gender interacting with country
+# Finding: Effect of ideology on gender differs strongly between countries (in direction & magnitude)
+fit5 <- lm(lrgen$ideology_st ~ lrgen$female * lrgen$country)
+#Question: do we want lrgen$country as an interacted term, or as an effect term? One is more complex, whereas the other is more simple to interpret.
+
+## WORKING NOTE: Add further regressions (regression model with regime variable, further interactions, etc.).	Possibly look at specific regressions for a few selected years and/or countries - decide: which models do we want to include; what is interesting/makes sense?
+
+#Alin - regression of ideology on gender interacting with regime and accounting for year 
+#remember regime can be three types: 3 - liberal democracy, 2 - electoral democracy, 1 - electoral autocracy
+# Finding: the more democratic a regime is, the more left-wing it tends to be.
+  #Gender is not statistically significant, neither when other variables are taken into account nor through its interaction terms -- no significant difference across different regime types. Check summary() 
+
+fit6 = lm(ideology_st ~ female * regime + year, data = lrgen)
+#dunno which one makes more sense, so I am greying out the other version
+#fit6 = lm(ideology_st ~ female + regime + year, data = lrgen)
+
+
+
+
+```
+
+```{r, results = 'asis'}
+# regression table
+
+stargazer::stargazer(fit1, fit2, fit3, fit4,
+                      ## Title of the table
+                     title = "Regression table",
+                     ## Specify whether to list the intercept coefficient as first or last
+                     intercept.top = T, intercept.bottom = F,
+                     ## Informative names of the predictors
+                     covariate.labels = c("Intercept",
+                                          "Female", "Year","Female x Year",
+                                          "Age", "Female x Age",
+                                          "Year", "Female x Year"),
+                      ## Labels for each model
+                     dep.var.labels = c("Ideological self-placement from left (1) to right (10)"),
+                    column.sep.width = "10pt",
+                    font.size = "large",
+                    model.names = TRUE,
+                    column.labels = c("Model 1", "Model 2", "Model 3", "Model 4"),
+                    omit.stat=c("f", "ser"),
+                    type = "latex",
+                     header = FALSE)
+```
+
+
+Discuss that we cannot say anything on causality (because we cannot manipulate gender, no experiment, ...)
+
+# Conclusion
+(500 - 700 words)
+• a short summary of your paper,
+• discusses the limitations of your approach (either in the theory you propose or in the empirical analyses). These limitations can be presented in positive terms as they open new avenues for future research.
+• State how your analysis could be improved (e.g. better data that would be useful to collect).
+• Basically, state what your paper could not do and propose how future research could go about it. If for example you know that there are important confounding factors which you could not include, mention
+these and emphasize the importance of including them.
+• makes concrete suggestions for future research.
+
+
+
+
+# Proposal
+
+Please write your final project using this template. 
+
+
+The below text explains in detail how to cite and get a nicely formatted reference list.You can delete this text and use the rmd file as your template. 
+
+**How to cite works and get a reference list automatically? With this template we included two additional files, references.bib and american-political-science-association.csl. **
+
+- I want to cite the book by [@aytac2016rethinking, p. 20]. 
+
+- The references.bib file contains the references of two works in bibtex format. You can extend this reference file by adding the works you want to cite in bibtex format. Open the references file to see how it looks like. The first reference is for Powner(2015) and it starts with `@Book{powner2015, author = {Leanne C Powner},(...)}`. `powner2015` is the keyname of this reference and you can refer to it (or cite it) using the `@` sign in front of it, in particular by writing `@powner2015`. For example,
+    - you can cite works within the Rmarkdown file, by writing  `[@powner2015]` in the text and you will get the following citation in brackets [@powner2015]. 
+    - If you want to refer to a work without using round brackets, write `@mayhew2005divided` (without the squared brackets) in your text and you will get @mayhew2005divided. 
+    - To add references of the works you want to cite, you need to insert the citation information in the references.bib file. You can find the citation information on almost anything on google scholar: 
+          - 1) go to google scholar and search for topic of your interest, 
+          - 2) choose a work on Google Scholar, then click on cite, then choose Bibtex format, copy-paste this in the references.bib file, save the .bib file. That is all. 
+
+- In this class we are going to use the APSA reference and citation style. 
+    - The hard way to follow this style is to read the style manual and manually correct the style in your reference list and citations. By style is meant, for example, whether one should write the full names of the authors, or abbreviate the first name, whether one should write the title of the work in italics or not, whether one should place the publication year right after the author's name or towards the end, etc.. 
+    - All these rules are specified in the APSA style manual, which I uploaded on  Moodle. 
+    - The good news is, in this class you do not need to do anything manually, as Rmarkdown will do it for you! (From personal experience I can tell, this is pretty awesome, it will save you tons of time.) 
+    - You just need to specify the citation and language style in the YAML preamble and supply the style file in the folder where your Rmd file is. **This is already done in this template**. Check the YAML preamble in this template, line 9 says `csl: american-political-science-association.csl`, this is you telling Rmarkdown to use the style saved in this .csl file. 
+    - You do not need to do anything more, just cite the works in your text. Rmarkdown will create proper citations and format the reference list in the correct way as specified by the APSA style. It will include the reference list right at the bottom of your document.
+    
+Let us cite another work by Tsebelis here: @tsebelis1999veto or [@tsebelis1999veto, p.100].
+
+
+# References
