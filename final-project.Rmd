@@ -91,7 +91,7 @@ lrgen$country <- as.factor(lrgen$country)
 ```
 
 ```{r regime_variable, message=FALSE, echo=FALSE, warning=FALSE}
-## create variable for regime type (3 = liberal democracy, 2 = electoral democracy, 1 = electoral autocracy)
+## create variable for regime type (2 = liberal democracy, 1 = electoral democracy, 0 = electoral autocracy)
 
 lrgen$regime[lrgen$country %in% c("Austria", "Australia", "Belgium", "Canada", "Czech Republic", "Denmark", "Estonia", "Finland", "France", "Germany", "Greece", "Latvia", "United Kingdom", "Iceland", "Ireland", "Italy", "Luxembourg", "The Netherlands", "Norway", "Portugal", "Slovakia", "Slovenia", "Spain", "Sweden", "Switzerland", "Israel", "Chile", "Mexico", "New Zealand", "Japan", "United States", "South Korea")] <- 2
 
@@ -172,7 +172,7 @@ knitr::kable(countries_overview)
 
 ```
 
-The cultural and political setting matters for our hypothesised relationship between gender and ideology. As this setting may differ across regime types, we introduce a new `regime` variable. We code this variable using V-dem's Regimes-of-the-World index [@coppedge_v-dem_2023]. This index codes countries as liberal democracies (3), electoral democracies (2), electoral autocracies (1), or closed autocracies (0). The regime variable in our data is created by manually coding each country-year as one of these regime types. Our data only includes regime levels 1 to 3 (there are no closed autocracies). As we are focusing on OECD countries, `r round(sum(lrgen$regime == 2) / dim(lrgen)[1] * 100, 2)`% of observations in our data set are from liberal democracies, with only `r round(sum(lrgen$regime == 1) / dim(lrgen)[1] * 100, 2)`% of observations from electoral democracies and `r round(sum(lrgen$regime == 0) / dim(lrgen)[1] * 100, 2)`% of observations from electoral autocracies.
+The cultural and political setting matters for our hypothesised relationship between gender and ideology. As this setting may differ across regime types, we introduce a new `regime` variable. We code this variable using V-dem's Regimes-of-the-World index [@coppedge_v-dem_2023]. This index codes countries as liberal democracies (2), electoral democracies (1) or electoral autocracies (0). The regime variable in our data is created by manually coding each country-year as one of these regime types. Our data does not include closed autocracies. As we are focusing on OECD countries, `r round(sum(lrgen$regime == 2) / dim(lrgen)[1] * 100, 2)`% of observations in our data set are from liberal democracies, with only `r round(sum(lrgen$regime == 1) / dim(lrgen)[1] * 100, 2)`% of observations from electoral democracies and `r round(sum(lrgen$regime == 0) / dim(lrgen)[1] * 100, 2)`% of observations from electoral autocracies.
 
 **Control Variables**
 
@@ -185,7 +185,7 @@ As gender is randomly biologically assigned, there are very few potential confou
 | `year`        | Year in which the survey was implemented, from 2004 to 2018                                                                                 |
 | `age`         | Respondent's age at the time of the survey                                                                                                  |
 | `country`     | Name of the OECD country of the respondent                                                                                                  |
-| `regime`      | Regime type of the country of the respondent: 3 = liberal democracy, 2 = electoral democracy, 1 = electoral autocracy, 0 = closed autocracy |
+| `regime`      | Regime type of the country of the respondent: 2 = liberal democracy, 1 = electoral democracy, 0 = electoral autocracy                       |
 
 ```{r descriptive_statistics, message=FALSE, echo=FALSE}
 ## descriptive statistics
@@ -429,47 +429,47 @@ In this section, we are going to run linear regressions in order to determine th
 
 To reiterate, hypothesis 1 pressuposes that women should self-identify, on average, as more liberal than men. Therefore, we start with a simple model, correlating ideology with gender. $\alpha$ represents the intercept (which, in this case, is the average ideology score for men); $\beta1$ represents the difference in ideology score between women and men, which is interacted with variable $Gender$, and $\epsilon$ is the error term.
 
-```{r proto_fit_1a}
+```{r proto_fit_1a, message=FALSE, echo=FALSE}
 proto_fit_1a = lm(lrgen$ideology_st ~ lrgen$female)
 ```
 
 $$
-Ideology = \alpha + \beta1 \cdot Gender + \epsilon
+Ideology = \alpha + \beta1 \cdot Female + \epsilon
 $$
 
 The $\beta1$ coefficient indicates that, on average, being a woman is associated with more liberal self-identification (`r round(coef(proto_fit_1a)["lrgen$female"],2)`). Despite the fact the result is statistically significant, we believe that the effect might be moderated by the country in which the survey had taken place. In other words, the difference between women and men's self-reported ideology might vary from country to country depending on cultural, political, socioeconomic or women rights-related factors. Therefore, we are adding to the simple model the interaction term between gender and country.
 
-```{r proto_fit_1b}
+```{r proto_fit_1b, message=FALSE, echo=FALSE}
 proto_fit_1b = lm(lrgen$ideology_st ~ lrgen$female * lrgen$country)
 
 ```
 
 $$
-Ideology = \alpha + \beta1 \cdot Gender + \beta2 \cdot Country + \beta3 \cdot (Gender \cdot Country) + \epsilon
+Ideology = \alpha + \beta1 \cdot Female + \beta2 \cdot Country + \beta3 \cdot (Female \cdot Country) + \epsilon
 $$
 
 Indeed, this adapted model shows that there is great variance in self-reported ideology when accounting for the different countries. For example, women in Portugal are estimated to be `r round(coef(proto_fit_1b)["lrgen$female:lrgen$countryPortugal"],2)` units less liberal than men, whereas in Iceland the opposite seems to be true, with women being `r round(coef(proto_fit_1b)["lrgen$female:lrgen$countryIceland"],2)` units more liberal. Despite these significant differences within countries, the overall effect of gender across all countries is still notable, with women being around `r round(coef(proto_fit_1b)["lrgen$female"],2)` units less conservative than men, on average.
 
 Followingly, we will add a temporal dimension by including time as a predictor, resulting in the final model. This is in order to control for the potential influence of the passing of time on the self-placement on the ideological scale of individuals, and assures that time is not a confounder.
 
-```{r h1_lm}
+```{r h1_lm, message=FALSE, echo=FALSE}
 fit1 = lm(lrgen$ideology_st ~ lrgen$female * lrgen$country + lrgen$year)
 ```
 
 $$
-Ideology = \alpha + \beta1 \cdot Gender + \beta2 \cdot Country + \beta3 \cdot (Gender \cdot Country) + \beta4 \cdot Year + \epsilon 
+Ideology = \alpha + \beta1 \cdot Female + \beta2 \cdot Country + \beta3 \cdot (Female \cdot Country) + \beta4 \cdot Year + \epsilon 
 $$
 
 The results indicate that, on average, for every increase in the surveyed year there is a `r round(coef(fit1)["lrgen$year"], 3)` move towards more liberal ideological self-placement; in other words, respondents tend to be more liberal as time goes by. However, the results on gender remain similar to the previous model, both in statistical significance and the magnitude of the effect. According to this, women are `r round(coef(fit1)["lrgen$female"],3)` units more liberal than men, on average, across all countries.
 
 In transitioning from this model to the second one, we aim to explore how the effect on ideology might be shaped by age and its interaction with the relevant variables (year, gender and countries). Note that we have opted to treat countries as a fixed term going forward, for ease of understanding and to avoiding overfitting. Importantly, our earlier analysis has already established that countries experience different effects, yet on average women still move towards being more liberal.
 
-```{r h1_lm_b}
+```{r h1_lm_b, message=FALSE, echo=FALSE}
 fit3 = lm(lrgen$ideology_st ~ lrgen$female * lrgen$age + lrgen$year + lrgen$country)
 ```
 
 $$
-Ideology = \alpha + \beta1 \cdot Gender + \beta2 \cdot Age + \beta3 \cdot (Gender \cdot Age) + \beta4 \cdot Year + \beta5 \cdot Country + \epsilon
+Ideology = \alpha + \beta1 \cdot Female + \beta2 \cdot Age + \beta3 \cdot (Female \cdot Age) + \beta4 \cdot Year + \beta5 \cdot Country + \epsilon
 $$
 
 The $\beta3$ coefficient is very statistically significant and has a value of `r round(coef(fit3)["lrgen$female:lrgen$age"],3)`, indicating that women's ideology tends to change more than that of men, as it is bigger than $\beta2$ (`r  round(coef(fit3)["lrgen$age"],3)`). Essentially, this shows that, despite the existent gender gap, women tend to very slightly turn more conservative as they become older (`r round(coef(fit3)["lrgen$female:lrgen$age"],3)`) the gender gap in ideological self-placement widens as women age too. **(did i interpret it right?)** We can conclude H1 is passed.
@@ -480,12 +480,12 @@ The $\beta3$ coefficient is very statistically significant and has a value of `r
 
 For the second hypothesis, we aim to determine whether the gender-ideology relationship strengthens over time in our time-frame. Naturally, we begin by interacting gender and year to explore the potential changes in their relationship over the years.
 
-```{r proto_fit_2a}
+```{r proto_fit_2a, message=FALSE, echo=FALSE}
 proto_fit_2a= lm(lrgen$ideology_st ~ lrgen$female * lrgen$year)
 ```
 
 $$
-\alpha + \beta1 \cdot Gender + \beta2 \cdot Year + \beta3 \cdot (Gender \cdot Year) + \epsilon
+\alpha + \beta1 \cdot Female + \beta2 \cdot Year + \beta3 \cdot (Female \cdot Year) + \epsilon
 $$
 
 Our analysis indicates a general trend towards increased liberalism over time for both genders: the coefficient $\beta_2$ suggests that, on average, individuals report higher ideology scores as the years progress, with an estimated increase of `r round(coef(proto_fit_2a)["lrgen$year"],2)` units per year. Even more importantly, our findings highlight that this trend is more pronounced among women. The coefficient $\beta_3$ confirms that women exhibit a steeper increase in liberalism, with an estimated additional increase of `r round(coef(proto_fit_2a)["lrgen$female:lrgen$year"],2)` units per year.
@@ -493,12 +493,12 @@ Our analysis indicates a general trend towards increased liberalism over time fo
 
 As previously established, adding countries as a fixed term helps us control for the inherent differences there might be between countries. Thus, we have added this variable in the final model:
 
-```{r h2_lm}
+```{r h2_lm, message=FALSE, echo=FALSE}
 fit2 <- lm(lrgen$ideology_st ~ lrgen$female * lrgen$year + lrgen$country)
 ```
 
 $$
-\alpha + \beta1 \cdot Gender + \beta2 \cdot Year + \beta3 \cdot (Gender \cdot Year) + \beta4 \cdot Country + \epsilon
+\alpha + \beta1 \cdot Female + \beta2 \cdot Year + \beta3 \cdot (Female \cdot Year) + \beta4 \cdot Country + \epsilon
 $$
 
 Despite the great differences between countries, every year does lead, on average, towards more liberal attitudes (`r round(coef(fit2)["lrgen$year"],2)`). $\beta3$ shows that there is a statistically significant, more pronounced trend for women to become `r round(coef(fit2)["lrgen$female:lrgen$year"],2)` units more liberal than men for every given year. This, in turn, confirms H2.
@@ -509,37 +509,62 @@ Despite the great differences between countries, every year does lead, on averag
 
 If the third hypothesis is correct, then we should expect to see an impact of regime on the gender gap. Therefore, we will start with an interaction with regime.
 
-```{r proto_fit_6a}
+```{r proto_fit_6a, message=FALSE, echo=FALSE}
 proto_fit_6a = lm(ideology_st ~ female * regime, data = lrgen)
 ```
 
 $$
-Ideology = \alpha + \beta1 \cdot Gender + \beta2 \cdot Regime + \beta3 \cdot (Gender \cdot Regime) + \epsilon
+Ideology = \alpha + \beta1 \cdot Female + \beta2 \cdot Regime + \beta3 \cdot (Female \cdot Regime) + \epsilon
 $$
 
 The initial findings reveal that in autocratic regimes, men tend to exhibit a slightly conservative base ideology (denoted by $\alpha$), while women's ideology is marginally more liberal by a slight degree (approximately `r round(coef(proto_fit_6a)["female"],2)` units). This effect could have happened by chance; however, the effect of regime type on ideology scores emerges as highly statistically significant. On average, the more democratic a country's regime type is, the more liberal the self-placements of individuals seem to be (`r round(coef(proto_fit_6a)["regime"],2)` units). The interaction $\beta3$ between gender and regime type is similarly significant, and suggests that the gender-ideology relationship is moderated by regimes, as the difference in ideology scores between men and women tend to diminish (by `r round(coef(proto_fit_6a)["female:regime"],2)` units), the more liberal a country is. Therefore, these results indicate that regime does have an effect on gender gap.
 
 Next, we will include years as a fixed term so as to control for this variable.
 
-```{r h3_lm}
+```{r h3_lm, message=FALSE, echo=FALSE}
 fit6 = lm(lrgen$ideology_st ~ lrgen$female * lrgen$regime + lrgen$year)
 ```
 
 $$
-Ideology = \alpha + \beta1 \cdot Gender + \beta2 \cdot Regime + \beta3 \cdot (Gender \cdot Regime) + \beta4 \cdot Year + \epsilon
+Ideology = \alpha + \beta1 \cdot Female + \beta2 \cdot Regime + \beta3 \cdot (Female \cdot Regime) + \beta4 \cdot Year + \epsilon
 $$
 
-Just as observed in previous models, one-year increases in survey years lead, on average, towards more liberal self-placements. Even when accounting for survey-years however, the gender gap widens with every increase in the regime type (from autocracy -\> electoral democracy -\> liberal democracy), as women become `r round(coef(fit6)["female:regime"],2)` units more liberal than men. This indicates that regime types do have an impact on the gender gap, confirming H3.
+Just as observed in previous models, one-year increases in survey years lead, on average, towards more liberal self-placements. Even when accounting for survey-years however, the gender gap widens with every increase in the regime type (from electoral autocracy -\> electoral democracy -\> liberal democracy), as women become `r round(coef(fit6)["female:regime"],2)` units more liberal than men. This indicates that regime types do have an impact on the gender gap, confirming H3.
 
-```{r labels for reg table}
-labelss = c("Males", "Females (change)", "Age", "Austria", "Belgium", "Canada", "Chile", "Czech Republic", "Denmark", "Estonia", "Finland", "France", "Germany", "Greece", "Hungary", "Iceland", "Ireland", "Israel", "Italy", "Japan", "Latvia", "Lithuania", "Luxembourg", "Mexico", "New Zealand", "Norway", "Poland", "Portugal", "Slovakia", "Slovenia", "South Korea", "Spain", "Sweden", "Switzerland", "The Netherlands", "Turkey", "United Kingdom", "United States", "Gender X Age", "Gender x Year","Regime","Year","Gender x (Austria)", "Gender x (Belgium)", "Gender x (Canada)", "Gender x (Chile)", "Gender x (Czech Republic)", "Gender x (Denmark)", "Gender x (Estonia)", "Gender x (Finland)", "Gender x (France)", "Gender x (Germany)", "Gender x (Greece)", "Gender x (Hungary)", "Gender x (Iceland)", "Gender x (Ireland)", "Gender x (Israel)", "Gender x (Italy)", "Gender x (Japan)", "Gender x (Latvia)", "Gender x (Lithuania)", "Gender x (Luxembourg)", "Gender x (Mexico)", "Gender x (New Zealand)", "Gender x (Norway)", "Gender x (Poland)", "Gender x (Portugal)", "Gender x (Slovakia)", "Gender x (Slovenia)", "Gender x (South Korea)", "Gender x (Spain)", "Gender x (Sweden)", "Gender x (Switzerland)", "Gender x (The Netherlands)", "Gender x (Turkey)", "Gender x (United Kingdom)", "Gender x (United States)", "Gender X Regime")
+```{r labels for reg table, message=FALSE, echo=FALSE}
+labelss = c("Males", "Females (change)", "Age", "Austria", "Belgium", "Canada", "Chile", "Czech Republic", "Denmark", "Estonia", "Finland", "France", "Germany", "Greece", "Hungary", "Iceland", "Ireland", "Israel", "Italy", "Japan", "Latvia", "Lithuania", "Luxembourg", "Mexico", "New Zealand", "Norway", "Poland", "Portugal", "Slovakia", "Slovenia", "South Korea", "Spain", "Sweden", "Switzerland", "The Netherlands", "Turkey", "United Kingdom", "United States", "Gender X Age", "Gender x Year", "Regime", "Year","Gender x (Austria)", "Gender x (Belgium)", "Gender x (Canada)", "Gender x (Chile)", "Gender x (Czech Republic)", "Gender x (Denmark)", "Gender x (Estonia)", "Gender x (Finland)", "Gender x (France)", "Gender x (Germany)", "Gender x (Greece)", "Gender x (Hungary)", "Gender x (Iceland)", "Gender x (Ireland)", "Gender x (Israel)", "Gender x (Italy)", "Gender x (Japan)", "Gender x (Latvia)", "Gender x (Lithuania)", "Gender x (Luxembourg)", "Gender x (Mexico)", "Gender x (New Zealand)", "Gender x (Norway)", "Gender x (Poland)", "Gender x (Portugal)", "Gender x (Slovakia)", "Gender x (Slovenia)", "Gender x (South Korea)", "Gender x (Spain)", "Gender x (Sweden)", "Gender x (Switzerland)", "Gender x (The Netherlands)", "Gender x (Turkey)", "Gender x (United Kingdom)", "Gender x (United States)", "Gender X Regime")
+labelss_small = c("Males (intercept)", "Females (change)", "Age", "Gender X Age", "Gender X Year", "Regime", "Year", "Gender X Regime")
 ```
 
-```{r regression table, results = 'asis', message=FALSE, echo=FALSE}
+
+
+\newpage
+```{r regression table partial,results = 'asis', message=FALSE, echo=FALSE}
+stargazer::stargazer(fit1, fit3, fit2, fit6,
+                     title = "Regression table",
+                     ## Specify whether to list the intercept coefficient as first or last
+                     intercept.top = T, intercept.bottom = F,
+                     ## Informative names of the predictors                     
+                    dep.var.labels = c("Ideological self-placement from left (1) to right (10)"),
+                    column.sep.width = "10pt",
+                    covariate.labels = labelss_small,
+                    font.size = "large",
+                    model.names = TRUE,
+                    column.labels = c("H1 Model 1", "H1 Model 2", "H2 Model 3", "H3 Model 4"),
+                    omit.stat=c("f", "ser"),
+                    type = "latex", keep = c(1,2,3,39,40,41,42,78),
+                    header = FALSE,
+                    digits=2)
+
+
+```
+
+\newpage
+
+```{r regression table full, message=FALSE, echo=FALSE, results='hide'}
 # regression table
 # 
-stargazer::stargazer(fit1, fit3, fit2, fit6,
-                      ## Title of the table
+reg_table_full = stargazer::stargazer(fit1, fit3, fit2, fit6,
                      title = "Regression table",
                      ## Specify whether to list the intercept coefficient as first or last
                      intercept.top = T, intercept.bottom = F,
@@ -551,8 +576,10 @@ stargazer::stargazer(fit1, fit3, fit2, fit6,
                     model.names = TRUE,
                     column.labels = c("H1 Model 1", "H1 Model 2", "H2 Model 3", "H3 Model 4"),
                     omit.stat=c("f", "ser"),
-                    type = "latex",
-                     header = FALSE,digits=5, longtable=TRUE ) #the longtable thing is useless..
+                    type = "html",
+                    header = FALSE,
+                    digits=5)
+write(reg_table_full, file = "regression_table.html")
 
 ```
 
