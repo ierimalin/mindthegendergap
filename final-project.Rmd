@@ -689,9 +689,12 @@ pred_ld_m <- predict(fit6, newdata = data_ld_m, interval = "confidence", level =
 
 ```
 
-```{r confidence interval H3 plot,, echo=FALSE, fig.height= 10, fig.width=15}
+```{r confidence interval H3 plot, echo=FALSE, fig.height= 10, fig.width=15}
 
 #women
+par( mar = c(9, 7, 5, 1), oma = c(5, 5, 7, 2), cex.lab = 4.5, cex.axis = 4.5, cex.main = 3.5, cex.sub = 4.5, mgp = c(4, 2.3, 0))
+
+
 plot(x = 0, y = 0, ylim = c(5, 7), xlim = c(0.5, 3.5),
 lwd = 3, col = "steelblue2",
 las =1, type = "n", 
