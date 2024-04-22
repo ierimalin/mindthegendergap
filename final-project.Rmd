@@ -1,7 +1,7 @@
 ---
 title: "Mind the (Gender) Gap: Analysing Statistical Relationships between Gender and Political Ideology"
 author: Sneha, Alin & Anna
-date: "12. April 2024"
+date: "22. April 2024"
 header-includes:
    - \usepackage{longtable}
 output:
@@ -11,9 +11,11 @@ bibliography: references.bib
 csl: american-political-science-association.csl
 ---
 
+\newpage
+
 **Acknowledgements**
 
-We are grateful to Ruth Dassonneville for her invaluable assistance and support in navigating her dataset and adapting it to align with our research objectives.
+We are grateful to Ruth Dassonneville for her invaluable assistance and support in navigating her dataset and adapting it to align with our research objectives, as well as to Mariyana Angelova for her invaluable feedback. All errors remain our own.
 
 **Abstract**
 
@@ -93,7 +95,7 @@ lrgen$regime[lrgen$country %in% c("Austria", "Australia", "Belgium", "Canada", "
 
 # Hungary
 lrgen$regime[lrgen$country == "Hungary" & lrgen$year <= 2009] <- 2
-lrgen$regime[lrgen$country == "Hungary" & (lrgen$year > 2009 & lrgen$year <= 2017)] <- 0
+lrgen$regime[lrgen$country == "Hungary" & (lrgen$year > 2009 & lrgen$year <= 2017)] <- 1
 lrgen$regime[lrgen$country == "Hungary" & (lrgen$year > 2017)] <- 0
 
 # Latvia
@@ -209,10 +211,9 @@ knitr::kable(descriptives, caption = "Variables - Descriptive Statistics")
 
 ## Data Visualization
 
-Before running the regression analyses, we have plotted ideology self-identification by gender, time, and country for the dataset in order to visually map the relationship between gender and ideology. Data visualizations in Figures 1 - 6 all seem to support our hypotheses **H1** and **H2**, which state that women tend to identify as more ideologically liberal than men, and that this gendered ideological gap increases over time.
+Before running the regression analyses, we have plotted ideology self-identification by gender, time, and country for the dataset in order to visually map the relationship between gender and ideology. Data visualizations in Figures 1 - 8 all seem to support our hypotheses **H1**, **H2** and **H3**, which state that women tend to identify as more ideologically liberal than men, that this gendered ideological gap increases over time and differs between regime types.
 
 ```{r graph_ideology_distribution, message=FALSE, echo=FALSE}
-## further descriptives graphs we could include
 
 boxplot(lrgen$ideology_st, main = "Figure 1. Distribution of Ideology", las = 1, col = "orangered", ylab = "Ideology from 1 (left) to 10 (right)")
 abline(h = 5, col = "steelblue4", lty = 2)
@@ -225,23 +226,23 @@ It is clear from Figure 1 that, on average, people rarely tend towards ideologic
 ## create subsets of data for further analysis
 
 ## gender subsets (all years)
-female <- subset(lrgen, subset = (female == 1))
-male <- subset(lrgen, subset = (female == 0))
+female_data <- subset(lrgen, subset = (female == 1))
+male_data <- subset(lrgen, subset = (female == 0))
 
 ## 2018 subset (both genders)
 lrgen_2018 <- subset(lrgen, subset = (year == 2018))
 
 ## 2018 subsets by gender
-female_2018 <- subset(female, subset = (year == 2018))
-male_2018 <- subset(male, subset = (year == 2018))
+female_2018 <- subset(female_data, subset = (year == 2018))
+male_2018 <- subset(male_data, subset = (year == 2018))
 ```
 
 ```{r graph_ideology_over_time_by_gender, message=FALSE, echo=FALSE}
 ## plot average ideology over time by gender
 
 # calculate average ideology over time by gender
-female_ideology_year <- tapply(female$ideology, female$year, mean)
-male_ideology_year <- tapply(male$ideology, male$year, mean)
+female_ideology_year <- tapply(female_data$ideology, female_data$year, mean)
+male_ideology_year <- tapply(male_data$ideology, male_data$year, mean)
 
 # plot
 plot(2004:2018, female_ideology_year,
@@ -323,6 +324,9 @@ In breaking down the visualization by country, our findings reflect Dassonnevill
 
 Figure 5, therefore, clearly shows that evidence of the existence of a gendered ideological gap varies across countries. As our `gender` variable is a proxy, this indicates to us that the cultural salience of women's issues varies across countries with different sociocultural and politico-legal contexts.
 
+Building on the country-wise variation as seen in Figure 5, Figure 6 breaks down the difference in degree of ideological self-identification by gender over time. Although Dassonneville asserts that the ideological gender gap has been largely stable over time since the 1990s [@dassonneville_change_2021, p. 234], Figure 6 shows that most countries have seen fluctuation in the ideological gap between genders, even if the difference is not so dramatic as it was in the 80s and early 90s.
+
+
 ```{r male-female difference in ideology, fig.width = 30, fig.height = 40, out.width = "100%",message=FALSE, echo=FALSE}
 ## Plot development of average female and male ideological self-placement over time, by country
 ## WORKING NOTE: make headers of each plot (country name) visible, make labels/headers visible, etc.
@@ -359,8 +363,6 @@ for (i in 1:length(unique(lrgen$country))){
 ```
 
 \newpage
-
-Building on the country-wise variation as seen in Figure 5, Figure 6 breaks down the difference in degree of ideological self-identification by gender over time. Although Dassonneville asserts that the ideological gender gap has been largely stable over time since the 1990s [@dassonneville_change_2021, p. 234], Figure 6 shows that most countries have seen fluctuation in the ideological gap between genders, even if the difference is not so dramatic as it was in the 80s and early 90s.
 
 As figures 7 and 8 display, there are slight differences in the relationship between gender and ideology between regime types, lending support to our hypothesis 3. In liberal democracies, women are more liberal than men throughout almost the entire period of analysis. Only in 2018, a reversal is visible, which may be attributable to the fact that, in 2018, the data set only contains data for a single liberal democracy, Italy. In contrast, in electoral democracies and electoral autocracies, the reversal of the gender gap seems to have occurred later than in liberal democracies. Moreover, the gender gap seems to be slightly larger in electoral autocracies than in liberal and electoral democracies. While these patterns suggest interesting interactions between regime type and the relationship between gender and ideology, they need to be examined with caution. As our data set predominantly consists of liberal democracies, a more extensive analysis of other regime types seems warranted to draw further conclusions.
 
@@ -430,98 +432,94 @@ mtext("Difference in average ideology between men and women \n (positive numbers
 
 ## Data analysis method
 
-To evaluate the relationship between gender and ideology, and the extent to which this effect is moderated by variables like year, age, country, and regime, we employ regression analysis and create several linear models.
-
-First, we run a simple linear regression, analysing the relationship between gender and ideology. We subsequently include interaction terms to examine heterogenous treatment effect of gender based on year, age, country, and regime type respectively.
+To evaluate the relationship between gender and ideology, and the extent to which this effect is moderated by variables like survey year and regime, we employ regression analysis and create several linear models. 
+To start with, we run a simple linear regression, analysing the relationship between gender and ideology. We subsequently include interaction terms to examine heterogenous treatment effect of gender based on survey year and regime. Moreover, we control and examine further interactions for further variables, such as age, country, and survey year (in models where survey year is not the primary focus of analysis).
 
 # Data analysis and Discussion
-
-(1000 - 1500 words)
 
 In this section, we are going to run linear regressions in order to determine the plausibility of every hypothesis. Our working strategy was to start with models with a single explanatory variable, and subsequently build up the complexity through controlling for different variables or adding multiple interactions, so as to account for potential confounders. At the end of this section, a table will be presented with all the models for accessibility reasons.
 
 \newpage
+## Hypothesis 1
 
-# Hypothesis 1
+### Model 1
 
-To reiterate, hypothesis 1 pressuposes that women should self-identify, on average, as more liberal than men. Therefore, we start with a simple model, correlating ideology with gender. $\alpha$ represents the intercept (which, in this case, is the average ideology score for men); $\beta1$ represents the difference in ideology score between women and men, which is interacted with variable $Gender$, and $\epsilon$ is the error term.
+To reiterate, hypothesis 1 pressuposes that women should self-identify, on average, as more liberal than men. Therefore, we start with a simple model, correlating ideology with gender. $\alpha$ represents the intercept (which, in this case, is the average predicted ideology score for men); $\beta1$ represents the average predicted difference in ideology score between women and men, based on the variable $female$, and $\epsilon$ is the error term.
 
 ```{r proto_fit_1a, message=FALSE, echo=FALSE}
-proto_fit_1a = lm(lrgen$ideology_st ~ lrgen$female)
+proto_fit_1a = lm(ideology_st ~ female, data = lrgen)
+
 ```
 
 $$
 Ideology = \alpha + \beta1 \cdot Female + \epsilon
 $$
 
-The $\beta1$ coefficient indicates that, on average, being a woman is associated with more liberal self-identification (`r round(coef(proto_fit_1a)["lrgen$female"],2)`). Despite the fact the result is statistically significant, we believe that the effect might be moderated by the country in which the survey had taken place. In other words, the difference between women and men's self-reported ideology might vary from country to country depending on cultural, political, socioeconomic or women rights-related factors. Therefore, we are adding to the simple model the interaction term between gender and country.
+The $\beta1$ coefficient indicates that, on average, being a woman is associated with more left self-identification (`r round(coef(proto_fit_1a)["female"],3)`).
 
-```{r proto_fit_1b, message=FALSE, echo=FALSE}
-proto_fit_1b = lm(lrgen$ideology_st ~ lrgen$female * lrgen$country)
+As the country and the year in which the survey was conducted may influence the results, we include country- and year-fixed effects. The difference between women and men's self-reported ideology might vary from country to country depending on cultural, political, socioeconomic or women rights-related factors. Year may influence the relationship, as societies' ideology may evolve over time, as will be further tested as part of hypothesis 2.
+
+```{r fit1, message=FALSE, echo=FALSE}
+fit1 = lm(ideology_st ~ female + country + year , data = lrgen)
 
 ```
 
 $$
-Ideology = \alpha + \beta1 \cdot Female + \beta2 \cdot Country + \beta3 \cdot (Female \cdot Country) + \epsilon
+Ideology = \alpha + \beta1 \cdot Female + \beta2 \cdot Country + \beta3 \cdot Year + \epsilon
 $$
 
-Indeed, this adapted model shows that there is great variance in self-reported ideology when accounting for the different countries. For example, women in Portugal are estimated to be `r round(coef(proto_fit_1b)["lrgen$female:lrgen$countryPortugal"],2)` units less liberal than men, whereas in Iceland the opposite seems to be true, with women being `r round(coef(proto_fit_1b)["lrgen$female:lrgen$countryIceland"],2)` units more liberal. Despite these significant differences within countries, the overall effect of gender across all countries is still notable, with women being around `r round(coef(proto_fit_1b)["lrgen$female"],2)` units less conservative than men, on average.
+Indeed, this adapted model shows that country and year indeed account for some of the variation in ideology scores. For instance, the average predicted ideology of respondents in Turkey is `r round(coef(fit1)["countryTurkey"] - coef(fit1)["countryGermany"], 3)` points more right than that of respondents in Germany. For every increase in the surveyed year there is a `r round(coef(fit1)["year"], 3)` move towards more liberal ideological self-placement; in other words, respondents tend to be more liberal as time goes by. Nonetheless, the overall effect of gender across all countries is still notable, with women being around `r -1 * round(coef(fit1)["female"],3)` points less right than men, on average, with years and country kept constant.
 
-Followingly, we will add a temporal dimension by including time as a predictor, resulting in the final model. This is in order to control for the potential influence of the passing of time on the self-placement on the ideological scale of individuals, and assures that time is not a confounder.
+## Model 2
 
-```{r h1_lm, message=FALSE, echo=FALSE}
-fit1 = lm(lrgen$ideology_st ~ lrgen$female * lrgen$country + lrgen$year)
-```
-
-$$
-Ideology = \alpha + \beta1 \cdot Female + \beta2 \cdot Country + \beta3 \cdot (Female \cdot Country) + \beta4 \cdot Year + \epsilon 
-$$
-
-The results indicate that, on average, for every increase in the surveyed year there is a `r round(coef(fit1)["lrgen$year"], 3)` move towards more liberal ideological self-placement; in other words, respondents tend to be more liberal as time goes by. However, the results on gender remain similar to the previous model, both in statistical significance and the magnitude of the effect. According to this, women are `r round(coef(fit1)["lrgen$female"],3)` units more liberal than men, on average, across all countries.
-
-In transitioning from this model to the second one, we aim to explore how the effect on ideology might be shaped by age and its interaction with the relevant variables (year, gender and countries). Note that we have opted to treat countries as a fixed term going forward, for ease of understanding and to avoiding overfitting. Importantly, our earlier analysis has already established that countries experience different effects, yet on average women still move towards being more liberal.
+In transitioning from Model 2 to the Model 3, we aim to explore how the effect of gender on ideology might be shaped by respondents' age. To do so, we maintain the country- and year-fixed effects from model one, but add an interaction term between our gender variable $female$ and the variable $age$.
 
 ```{r h1_lm_b, message=FALSE, echo=FALSE}
-fit3 = lm(lrgen$ideology_st ~ lrgen$female * lrgen$age + lrgen$year + lrgen$country)
+fit3 = lm(ideology_st ~ female * age + country + year, data = lrgen)
+
+summary(fit3)
 ```
 
 $$
-Ideology = \alpha + \beta1 \cdot Female + \beta2 \cdot Age + \beta3 \cdot (Female \cdot Age) + \beta4 \cdot Year + \beta5 \cdot Country + \epsilon
+Ideology = \alpha + \beta1 \cdot Female + \beta2 \cdot Age + \beta3 \cdot (Female \cdot Age) + \beta5 \cdot Country + \beta4 \cdot Year + \epsilon
 $$
 
-The $\beta3$ coefficient is very statistically significant and has a value of `r round(coef(fit3)["lrgen$female:lrgen$age"],3)`, indicating that women's ideology tends to change more than that of men, as it is bigger than $\beta2$ (`r  round(coef(fit3)["lrgen$age"],3)`). Essentially, this shows that, despite the existent gender gap, women tend to very slightly turn more conservative as they become older (`r round(coef(fit3)["lrgen$female:lrgen$age"],3)`) the gender gap in ideological self-placement widens as women age too. **(did i interpret it right?)** We can conclude H1 is passed.
+In this model $\beta2$ of `r round(coef(fit3)["age"],3)` shows that, on average, respondents score higher (more right) on the left-right self-placement as they get older. Moreover, the effect of age on ideology differs between men and women. The $\beta3$ coefficient is statistically significant at a level of $\alpha$ < 0.001 and has a value of `r round(coef(fit3)["female:age"],3)`, indicating that women's ideology tends to change more than that of men. Women's predicted average ideology becomes even more right with increasing age, then men's. This is in line with the theoretical expectation that women's more right attitudes from the pre-1980s era may persist in older generations. Thus, the average predicted gendered ideology gap of women being more left than men decreases with respondents' age (all else being kept constant).
+
+Considering models 1 and 2, we can conclude H1 is passed. On average, women's predicted ideology on the left-right scale is more left than men's, even when controlling for country, year, and age. This supports the theoretical prediction that the socio-cultural salience of women's issues for citizens can influence their ideological left-right position, and that our $female$ variable acts as a proxy for the salience of these issues.
+
 
 \newpage
 
-## Hypothesis 2
+## Hypothesis 2 - Model 3
 
 For the second hypothesis, we aim to determine whether the gender-ideology relationship strengthens over time in our time-frame. Naturally, we begin by interacting gender and year to explore the potential changes in their relationship over the years.
 
 ```{r proto_fit_2a, message=FALSE, echo=FALSE}
-proto_fit_2a= lm(lrgen$ideology_st ~ lrgen$female * lrgen$year)
+proto_fit_2a = lm(ideology_st ~ female * year, data = lrgen)
 ```
 
 $$
 \alpha + \beta1 \cdot Female + \beta2 \cdot Year + \beta3 \cdot (Female \cdot Year) + \epsilon
 $$
 
-Our analysis indicates a general trend towards increased liberalism over time for both genders: the coefficient $\beta_2$ suggests that, on average, individuals report higher ideology scores as the years progress, with an estimated increase of `r round(coef(proto_fit_2a)["lrgen$year"],2)` units per year. Even more importantly, our findings highlight that this trend is more pronounced among women. The coefficient $\beta_3$ confirms that women exhibit a steeper increase in liberalism, with an estimated additional increase of `r round(coef(proto_fit_2a)["lrgen$female:lrgen$year"],2)` units per year.
+Our analysis indicates a general trend towards leftism over time for both genders: the coefficient $\beta_2$ suggests that, on average, individuals report lower ideology scores as the years progress, with an estimated decrease away from conservative beliefs by `r round(coef(proto_fit_2a)["year"],3) * -1` units per survey year. Even more importantly, our findings highlight that this trend is more pronounced among women. The coefficient $\beta_3$ confirms that women exhibit a steeper decline of positions on the ideological left-right scale, with an estimated decrease (move towards the 'left' end of the 10-point scale) of `r round(coef(proto_fit_2a)["female:year"],3) * -1` units per year.
 
 As previously established, adding countries as a fixed term helps us control for the inherent differences there might be between countries. Thus, we have added this variable in the final model:
 
 ```{r h2_lm, message=FALSE, echo=FALSE}
-fit2 <- lm(lrgen$ideology_st ~ lrgen$female * lrgen$year + lrgen$country)
+fit2 = lm(ideology_st ~ female * year + country, data = lrgen)
 ```
 
 $$
 \alpha + \beta1 \cdot Female + \beta2 \cdot Year + \beta3 \cdot (Female \cdot Year) + \beta4 \cdot Country + \epsilon
 $$
 
-Despite the great differences between countries, every year does lead, on average, towards more liberal attitudes (`r round(coef(fit2)["lrgen$year"],2)`). $\beta3$ shows that there is a statistically significant, more pronounced trend for women to become `r round(coef(fit2)["lrgen$female:lrgen$year"],2)` units more liberal than men for every given year. This, in turn, confirms H2.
+Despite the great differences between countries, every year does lead, on average, towards more ideologically left attitudes (`r round(coef(fit2)["year"],2) * -1`). $\beta3$ shows that there is a statistically significant, more pronounced trend for women to drift `r round(coef(fit2)["female:year"],2) * -1` units more towards the left than men for every given year. This, in turn, confirms H2.
 
 \newpage
 
-## Hypothesis 3
+## Hypothesis 3 - Model 4
 
 If the third hypothesis is correct, then we should expect to see an impact of regime on the gender gap. Therefore, we will start with an interaction with regime.
 
@@ -533,22 +531,25 @@ $$
 Ideology = \alpha + \beta1 \cdot Female + \beta2 \cdot Regime + \beta3 \cdot (Female \cdot Regime) + \epsilon
 $$
 
-The initial findings reveal that in autocratic regimes, men tend to exhibit a slightly conservative base ideology (denoted by $\alpha$), while women's ideology is marginally more liberal by a slight degree (approximately `r round(coef(proto_fit_6a)["female"],2)` units). This effect could have happened by chance; however, the effect of regime type on ideology scores emerges as highly statistically significant. On average, the more democratic a country's regime type is, the more liberal the self-placements of individuals seem to be (`r round(coef(proto_fit_6a)["regime"],2)` units). The interaction $\beta3$ between gender and regime type is similarly significant, and suggests that the gender-ideology relationship is moderated by regimes, as the difference in ideology scores between men and women tend to diminish (by `r round(coef(proto_fit_6a)["lrgen$female:lrgenregime"],2)` units), the more liberal a country is. Therefore, these results indicate that regime does have an effect on gender gap.
+The initial findings reveal that in electoral autocracies, men tend to exhibit a slightly conservative base ideology (denoted by $\alpha$, at `r round(coef(proto_fit_6a)["(Intercept)"],1)` on the ideological scale), while women's ideology is marginally more conservative, by an additional `r round(coef(proto_fit_6a)["female"],1)`.All results are very statistically significant, with p-values that are less than 0.001. 
+As the regime becomes increasingly more democratic, both genders seem to become more left by `r round(coef(proto_fit_6a)["regime"],2) * -1` scale-points. However, $\beta3$ suggests that regime acts as a moderator in the gender-ideology relationship, and that women are impacted by the change of the regime type much more than men (by `r round(coef(proto_fit_6a)["female:regime"],3) * -1` units). This translates into a narrowing of the gender gap at first, and then a reverse and increase of the gap, as the women effect surpasses men's and leads to women being more left. Therefore, these results indicate that regime does have an effect on the gender gap.
 
-Next, we will include years as a fixed term so as to control for this variable.
+Next, we will include years as a fixed term so as to control for this variable. We have chosen not to include a country-fixed effect in this model due to the fact that the regime variable is already summing up the country-based variation.
 
 ```{r h3_lm, message=FALSE, echo=FALSE}
-fit6 = lm(lrgen$ideology_st ~ lrgen$female * lrgen$regime + lrgen$year)
+fit6 = lm(ideology_st ~ female * regime + year, data = lrgen)
 ```
 
 $$
 Ideology = \alpha + \beta1 \cdot Female + \beta2 \cdot Regime + \beta3 \cdot (Female \cdot Regime) + \beta4 \cdot Year + \epsilon
 $$
 
-Just as observed in previous models, one-year increases in survey years lead, on average, towards more liberal self-placements. Even when accounting for survey-years however, the gender gap widens with every increase in the regime type (from electoral autocracy -\> electoral democracy -\> liberal democracy), as women become `r round(coef(fit6)["female:regime"],2)` units more liberal than men. This indicates that regime types do have an impact on the gender gap, confirming H3.
+Just as observed in previous models, one-year increases in survey years lead, on average, towards more liberal self-placements. 
+!!!! the gender gap first narrows as women become more left faster than men, then the gap reverses as women continue on this trend.
+Even when accounting for survey-years, the gender gap has a similar trajectory. Women become `r round(coef(fit6)["female:regime"],3) * -1` units more liberal than men despite them being more conservative at the intercept by `r round(coef(fit6)["female"],3)` points. This means that the gender gap narrows, reverses, then widens with every increase in the regime type (from electoral autocracy -\> electoral democracy -\> liberal democracy). These results confirm the H3.
 
 ```{r labels for reg table, message=FALSE, echo=FALSE}
-labelss = c("Males", "Females (change)", "Age", "Austria", "Belgium", "Canada", "Chile", "Czech Republic", "Denmark", "Estonia", "Finland", "France", "Germany", "Greece", "Hungary", "Iceland", "Ireland", "Israel", "Italy", "Japan", "Latvia", "Lithuania", "Luxembourg", "Mexico", "New Zealand", "Norway", "Poland", "Portugal", "Slovakia", "Slovenia", "South Korea", "Spain", "Sweden", "Switzerland", "The Netherlands", "Turkey", "United Kingdom", "United States", "Gender X Age", "Gender x Year", "Regime", "Year","Gender x (Austria)", "Gender x (Belgium)", "Gender x (Canada)", "Gender x (Chile)", "Gender x (Czech Republic)", "Gender x (Denmark)", "Gender x (Estonia)", "Gender x (Finland)", "Gender x (France)", "Gender x (Germany)", "Gender x (Greece)", "Gender x (Hungary)", "Gender x (Iceland)", "Gender x (Ireland)", "Gender x (Israel)", "Gender x (Italy)", "Gender x (Japan)", "Gender x (Latvia)", "Gender x (Lithuania)", "Gender x (Luxembourg)", "Gender x (Mexico)", "Gender x (New Zealand)", "Gender x (Norway)", "Gender x (Poland)", "Gender x (Portugal)", "Gender x (Slovakia)", "Gender x (Slovenia)", "Gender x (South Korea)", "Gender x (Spain)", "Gender x (Sweden)", "Gender x (Switzerland)", "Gender x (The Netherlands)", "Gender x (Turkey)", "Gender x (United Kingdom)", "Gender x (United States)", "Gender X Regime")
+labelss = c("Males", "Females (change)", "Age", "Austria", "Belgium", "Canada", "Chile", "Czech Republic", "Denmark", "Estonia", "Finland", "France", "Germany", "Greece", "Hungary", "Iceland", "Ireland", "Israel", "Italy", "Japan", "Latvia", "Lithuania", "Luxembourg", "Mexico", "New Zealand", "Norway", "Poland", "Portugal", "Slovakia", "Slovenia", "South Korea", "Spain", "Sweden", "Switzerland", "The Netherlands", "Turkey", "United Kingdom", "United States", "Gender X Age", "Gender x Year", "Regime","Year", "Gender X Regime")
 labelss_small = c("Males (intercept)", "Females (change)", "Age", "Gender X Age", "Gender X Year", "Regime", "Year", "Gender X Regime")
 ```
 
@@ -567,7 +568,7 @@ stargazer::stargazer(fit1, fit3, fit2, fit6,
                     model.names = TRUE,
                     column.labels = c("H1 Model 1", "H1 Model 2", "H2 Model 3", "H3 Model 4"),
                     omit.stat=c("f", "ser"),
-                    type = "latex", keep = c(1,2,3,39,40,41,42,78),
+                    type = "latex", keep = c(1,2,3,39,40,41,42,43),
                     header = FALSE,
                     digits=2)
 
@@ -584,8 +585,8 @@ reg_table_full = stargazer::stargazer(fit1, fit3, fit2, fit6,
                      ## Specify whether to list the intercept coefficient as first or last
                      intercept.top = T, intercept.bottom = F,
                      ## Informative names of the predictors
-                     covariate.labels = labelss,
-                     dep.var.labels = c("Ideological self-placement from left (1) to right (10)"),
+                    covariate.labels = labelss,
+                    dep.var.labels = c("Ideological self-placement from left (1) to right (10)"),
                     column.sep.width = "10pt",
                     font.size = "large",
                     model.names = TRUE,
@@ -598,7 +599,135 @@ write(reg_table_full, file = "regression_table.html")
 
 ```
 
-TO ADD: cannot manipulate gender, no experiment, ...,)
+
+## Confidence Intervals
+
+```{r confidence intervals H1, message=FALSE, echo=FALSE, results='hide'}
+##WORKING NOTE: This is probably wrong
+##random sampling of country and year:  c_a <- sample(lrgen$country, length(seq(min(lrgen$age), max(lrgen$age),1))) | y_a <- sample(lrgen$year, length(seq(min(lrgen$age), max(lrgen$age),1)))
+
+fit3
+confint(fit3, level = 0.95)
+
+pred_f <- predict(fit2, newdata = data.frame(female = 1, age = mean(lrgen$age), country = "Austria", year = median(lrgen$year)), interval = "confidence", level = 0.95) 
+pred_m <- predict(fit2, newdata = data.frame(female = 0, age = mean(lrgen$age), country = "Austria", year = median(lrgen$year)), interval = "confidence", level = 0.95)
+pref_gender_diff <- pred_m - pred_f
+```
+
+```{r confidence intervals H1 plot, message=FALSE, echo=FALSE}
+plot(x = 0, y = 0, ylim = c(5,5.3), xlim = c(1, 2),
+lwd = 3,
+las = 1, type = "n", 
+xaxt = "n",
+main = "Figure 9. Ideology by Gender",
+ylab = "Predicted Ideology",
+xlab = " Gender", pch = 19)
+axis(1, at = c(1.3,1.7), labels = c("Women", "Men"), cex = 0.4)
+points(x = 1.3, y = pred_f[,"fit"], col = "red", lty = 1, pch = 19 )
+abline(h = pred_f[,"fit"], col = "lightgray", lty = 3)
+segments(x0 = 1.3 , x1 = 1.3,
+y0 = pred_f[,"lwr"], y1 = pred_f[,"upr"] , col = "red" )
+points(x = 1.7, y = pred_m[,"fit"], col = "steelblue2", lty = 1, pch = 19 )
+abline(h = pred_m[,"fit"], col = "lightgray", lty = 3)
+segments(x0 = 1.7, x1 = 1.7,
+y0 = pred_m[,"lwr"], y1 = pred_m[,"upr"] , col = "steelblue2" )
+ 
+```
+
+
+```{r confidence intervals H2, message=FALSE, echo=FALSE, results='hide'}
+
+fit2
+confint(fit2, level = 0.95)
+
+yr <- seq(2004,2018,1)
+f <- rep(1, length(yr))
+pred_yr_f <- predict(fit2, newdata = data.frame(female = f, year = yr, country = "Austria") , interval = "confidence", level = 0.95)  
+
+m <- rep(0, length(yr))
+pred_yr_m <- predict(fit2, newdata = data.frame(female = m, year = yr, country = "Austria") , interval = "confidence", level = 0.95)
+pred_diff_yr <- pred_yr_m - pred_yr_f
+```
+
+```{r confidence intervals H2 plot, message=FALSE, echo=FALSE, fig.height= 10, fig.width=15}
+
+par(mfrow = c(2, 2), mar = c(3, 6, 10, 1))
+plot (yr, pred_yr_f[,"fit"], lwd = 2, col = "orangered", ylim = c(4.5, 5.5) , las =1, type = "l", main = "Figure 10. Effect of  Female Gender on Ideology by Year", ylab = "Predicted Ideology", xlab = "Year")
+lines(yr,pred_yr_f[,"lwr"], col = "orange", lty = 2, lwd = 1 )
+lines(yr,pred_yr_f[,"upr"], col = "orange", lty = 2, lwd = 1 )
+lines(yr,pred_yr_m[,"fit"], col = "steelblue", lwd = 1 )
+lines(yr,pred_yr_m[,"lwr"], col = "steelblue2", lty = 2, lwd = 1 )
+lines(yr,pred_yr_m[,"upr"], col = "steelblue2", lty = 2, lwd = 1 )
+
+plot (yr, pred_diff_yr[,"fit"], lwd = 2, col = "orangered", las =1, type = "l", main = "Figure 11. Gendered Ideology Gap by Year", ylab = "Ideology Gap", xlab = "Year")
+lines(yr,pred_diff_yr[,"lwr"], col = "orange", lty = 2, lwd = 1 )
+lines(yr,pred_diff_yr[,"upr"] - pred_yr_f[,"upr"], col = "orange", lty = 2, lwd = 1 )
+
+```
+We see in Figure X. that for a representative sample of the population, women have on average self-identified as more liberal in 2017-18 than they have in 2004. Figure X. shows without doubt that there is a time trend to the gendered ideological gap. In a sample of a fixed number of countries, the gender gap has increased steadily over the the 2004 - 2018 time period.
+The narrow confidence interval here demonstrates that on average for every year, women have tended to self-identify their ideology over a small range of values. Therefore, we can estimate that there is general coherence in how women have tended to self-identify ideologically over these years in OECD countries.
+
+## Hypothesis 3
+```{r confidence intervals H3, message=FALSE, echo=FALSE, results='hide'}
+fit6
+confint(fit6, level = 0.95)
+
+data_ea_f <- subset(female_data, select = c("female", "regime", "year"), female_data$regime == 0)
+data_ed_f <- subset(female_data, select = c("female", "regime", "year"), female_data$regime == 1)
+data_ld_f <- subset(female_data, select = c("female", "regime", "year"), female_data$regime == 2)
+
+pred_ea_f <- predict(fit6, newdata = data_ea_f, interval = "confidence", level = 0.95)
+pred_ed_f <- predict(fit6, newdata = data_ed_f, interval = "confidence", level = 0.95)
+pred_ld_f <- predict(fit6, newdata = data_ld_f, interval = "confidence", level = 0.95)
+
+data_ea_m <- subset(male_data, select = c("female", "regime", "year"), male_data$regime == 0)
+data_ed_m <- subset(male_data, select = c("female", "regime", "year"), male_data$regime == 1)
+data_ld_m <- subset(male_data, select = c("female", "regime", "year"), male_data$regime == 2)
+pred_ea_m <- predict(fit6, newdata = data_ea_m, interval = "confidence", level = 0.95)
+pred_ed_m <- predict(fit6, newdata = data_ed_m, interval = "confidence", level = 0.95)
+pred_ld_m <- predict(fit6, newdata = data_ld_m, interval = "confidence", level = 0.95)
+
+```
+
+```{r confidence interval H3 plot,, echo=FALSE, fig.height= 10, fig.width=15}
+
+#women
+plot(x = 0, y = 0, ylim = c(5, 7), xlim = c(0.5, 3.5),
+lwd = 3, col = "steelblue2",
+las =1, type = "n", 
+xaxt = "n",
+main = "Figure X. Women's Ideology by Regime Type",
+ylab = "Predicted Ideology",
+xlab = " Regime Type", pch = 19)
+axis(1, at = c(1,2,3), labels = c("Electoral Autocracy", "Electoral Democracy", "Liberal Democracy"), cex = 0.3)
+points(x = 1 - 0.1, y = mean(pred_ea_f[,"fit"]), col = "red", lty = 1, pch = 19 )
+abline(h = mean(pred_ea_f[,"fit"]), col = "lightgray", lty = 3)
+segments(x0 = 1 - 0.1 , x1 = 1 - 0.1,
+y0 = pred_ea_f[,"lwr"], y1 = pred_ea_f[,"upr"] , col = "red" )
+points(x = 2 - 0.1, y = mean(pred_ed_f[,"fit"]), col = "red", lty = 1, pch = 19 )
+abline(h = mean(pred_ed_f[,"fit"]), col = "lightgray", lty = 3)
+segments(x0 = 2 - 0.1 , x1 = 2 - 0.1,
+y0 = pred_ed_f[,"lwr"], y1 = pred_ed_f[,"upr"] , col = "red" )
+points(x = 3 - 0.1, y = mean(pred_ld_f[,"fit"]), col = "red", lty = 1, pch = 19 )
+abline(h = mean(pred_ld_f[,"fit"]), col = "lightgray", lty = 3)
+segments(x0 = 3 - 0.1 , x1 = 3 - 0.1,
+y0 = pred_ld_f[,"lwr"], y1 = pred_ld_f[,"upr"] , col = "red")
+
+points(x = 1 + 0.1, y = mean(pred_ea_m[,"fit"]), col = "steelblue", lty = 1, pch = 19 )
+abline(h = mean(pred_ea_m[,"fit"]), col = "lightgray", lty = 3)
+segments(x0 = 1 + 0.1, x1 = 1 + 0.1, y0 = pred_ea_m[,"lwr"], y1 = pred_ea_m[,"upr"] , col = "steelblue" )
+points(x = 2 + 0.1, y = mean(pred_ed_m[,"fit"]), col = "steelblue", lty = 1, pch = 19 )
+abline(h = mean(pred_ed_m[,"fit"]), col = "lightgray", lty = 3)
+segments(x0 = 2 + 0.1 , x1 = 2 + 0.1, y0 = pred_ed_m[,"lwr"], y1 = pred_ed_m[,"upr"] , col = "steelblue" )
+points(x = 3 + 0.1, y = mean(pred_ld_m[,"fit"]), col = "steelblue", lty = 1, pch = 19 )
+abline(h = mean(pred_ld_m[,"fit"]), col = "lightgray", lty = 3)
+segments(x0 = 3 + 0.1, x1 = 3 + 0.1, y0 = pred_ld_m[,"lwr"], y1 = pred_ld_m[,"upr"] , col = "steelblue")
+
+legend("topright", legend = c("Women", "Men"), fill = c("red", "steelblue"))
+```
+
+
+The effect of regime on ideology is even clearer in Figure X. Women seem to self-report as more liberal in liberal democracies and largely seme to self-identify as more ideologically conservative in electoral autocracies. However, when men and women are compared across regimes, it seems that women tend to self-identify as more liberal than men in all three types of regimes
 
 # Conclusion
 
@@ -626,31 +755,7 @@ TO ADD: cannot manipulate gender, no experiment, ...,)
 
 • makes concrete suggestions for future research.
 
-# Proposal
 
-Please write your final project using this template.
-
-The below text explains in detail how to cite and get a nicely formatted reference list.You can delete this text and use the rmd file as your template.
-
-**How to cite works and get a reference list automatically? With this template we included two additional files, references.bib and american-political-science-association.csl.**
-
--   I want to cite the book by [@aytac2016rethinking, p. 20].
-
--   The references.bib file contains the references of two works in bibtex format. You can extend this reference file by adding the works you want to cite in bibtex format. Open the references file to see how it looks like. The first reference is for Powner(2015) and it starts with `@Book{powner2015, author = {Leanne C Powner},(...)}`. `powner2015` is the keyname of this reference and you can refer to it (or cite it) using the `@` sign in front of it, in particular by writing `@powner2015`. For example,
-
-    -   you can cite works within the Rmarkdown file, by writing `[@powner2015]` in the text and you will get the following citation in brackets [@powner2015].
-    -   If you want to refer to a work without using round brackets, write `@mayhew2005divided` (without the squared brackets) in your text and you will get @mayhew2005divided.
-    -   To add references of the works you want to cite, you need to insert the citation information in the references.bib file. You can find the citation information on almost anything on google scholar: - 1) go to google scholar and search for topic of your interest, - 2) choose a work on Google Scholar, then click on cite, then choose Bibtex format, copy-paste this in the references.bib file, save the .bib file. That is all.
-
--   In this class we are going to use the APSA reference and citation style.
-
-    -   The hard way to follow this style is to read the style manual and manually correct the style in your reference list and citations. By style is meant, for example, whether one should write the full names of the authors, or abbreviate the first name, whether one should write the title of the work in italics or not, whether one should place the publication year right after the author's name or towards the end, etc..
-    -   All these rules are specified in the APSA style manual, which I uploaded on Moodle.
-    -   The good news is, in this class you do not need to do anything manually, as Rmarkdown will do it for you! (From personal experience I can tell, this is pretty awesome, it will save you tons of time.)
-    -   You just need to specify the citation and language style in the YAML preamble and supply the style file in the folder where your Rmd file is. **This is already done in this template**. Check the YAML preamble in this template, line 9 says `csl: american-political-science-association.csl`, this is you telling Rmarkdown to use the style saved in this .csl file.
-    -   You do not need to do anything more, just cite the works in your text. Rmarkdown will create proper citations and format the reference list in the correct way as specified by the APSA style. It will include the reference list right at the bottom of your document.
-
-Let us cite another work by Tsebelis here: @tsebelis1999veto or [@tsebelis1999veto, p.100].
 
 # References
 
