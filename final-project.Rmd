@@ -1,7 +1,7 @@
 ---
 title: "Mind the (Gender) Gap: Analysing Statistical Relationships between Gender and Political Ideology"
-author: Sneha, Alin & Anna
-date: "22. April 2024"
+author: Sneha Ghimire, Alin Ierima & Anna Heckhausen
+date: "23. April 2024"
 header-includes:
    - \usepackage{longtable}
 output:
